@@ -1,5 +1,5 @@
 /**
- * memos.js 24.1.22
+ * memos.js 24.1.29
  * https://immmmm.com/
  */
 var memosData = {
@@ -115,7 +115,7 @@ var memosEditorCont = `
             <svg xmlns="http://www.w3.org/2000/svg" width="1.35rem" height="1.35rem" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7m4 2h6m-3-3v6"/><circle cx="9" cy="9" r="2"/><path d="m21 15l-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></g></svg>
             <div class="dropdown-wrapper d-none">
                 <span class="btn linkpic-btn">外链</span>
-                <span class="btn image-btn" onclick="this.nextElementSibling.click()">Webp+</span>
+                <span class="btn image-btn" onclick="this.nextElementSibling.click()">WebP+</span>
                 <input class="memos-upload-Webp-image-input d-none" type="file" accept="image/*">
                 <span class="btn image-btn" onclick="this.nextElementSibling.click()">原图+</span>
                 <input class="memos-upload-image-input d-none" type="file" accept="image/*">
@@ -150,7 +150,7 @@ var memosEditorCont = `
       </div>
       <div class="memos-editor-footer border-t mt-2 pt-2 flex-wrap">
         <div class="d-flex">
-          <div class="button outline switchUser-btn d-none d-md-flex mr-2 p-2">
+          <div class="button outline switchUser-btn mr-2 p-2">
             <svg xmlns="http://www.w3.org/2000/svg" width=".9rem" height=".9rem" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M20 7h-9m3 10H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></g></svg>
           </div>
           <div class="button outline private-btn mr-2 p-2">
@@ -171,7 +171,7 @@ var memosEditorCont = `
             </select>
           </div>
           <div class="edit-memos d-none">
-            <button class="outline cancel-edit-btn mr-3 px-3 py-2" title="取消">取消</button>
+            <button class="outline cancel-edit-btn mr-2 px-2 py-2" title="取消">取消</button>
             <button class="primary edit-memos-btn px-5 py-2" title="保存">保存</button>
           </div>
           <button class="primary submit-memos-btn px-5 py-2" title="记下">记下</button>
@@ -978,6 +978,7 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
 
     if (link == memosPath) {
       try {
+
         let response = await fetch(userMemoUrl,{
             headers: {
               'Authorization': `Bearer ${memosOpenId}`,
@@ -990,9 +991,9 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
           let data = await response.json();
           let oneDayTag = window.localStorage && window.localStorage.getItem("memos-oneday-tag");
           let oneDayTagCount = window.localStorage && window.localStorage.getItem("memos-oneday-count");
-          if( oneDayTag !== null && oneDayTagCount !== null && search == ""){
+          if( oneDayTag !== null && oneDayTagCount !== null && !search ){
             let randomOneNum = Math.floor(Math.random() * oneDayTagCount)
-            let oneDayUrl = `${memosPath}/api/v1/memo?tag=${oneDayTag}&limit=1&offset=${randomOneNum}`
+            let oneDayUrl = `${link}/api/v1/memo?tag=${oneDayTag}&limit=1&offset=${randomOneNum}`
             //console.log(oneDayUrl)
             try {
               let responseOne = await fetch(oneDayUrl,{
@@ -1566,7 +1567,7 @@ function getEditIcon() {
         for (let i = 0; i < filesData.length; i++) {
             uploadWebpImage(filesData[i]);
         }
-        cocoMessage.info('图片上传中……');
+        cocoMessage.info('压缩并上传中……');
     }
   });
 
@@ -1612,18 +1613,18 @@ function getEditIcon() {
 
   function convertToWebP(imageData) {
     return new Promise((resolve) => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-        img.onload = function () {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0, img.width, img.height);
-            canvas.toBlob((blob) => {
-                resolve(blob);
-            }, 'image/webp', 0.7); // 设置压缩质量为70%
-        };
-        img.src = URL.createObjectURL(imageData);
+      const img = new Image();
+      img.onload = function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          canvas.toBlob((blob) => {
+              resolve(blob);
+          }, 'image/webp', 0.7); // 设置压缩质量为70%
+      };
+      img.src = URL.createObjectURL(imageData);
     });
   };
   uploadImageInput.addEventListener('change', () => {
@@ -2034,37 +2035,34 @@ function geminiAI(e){
   let AIMode = e.innerText
   let textOld = memosTextarea.value
   let memosContent;
+  if(!textOld){
+    cocoMessage.info('内容不能为空');
+    return
+  }
   if(AIMode == "语音润色"){
     memosTextarea.value = `${textOld}\n---\n`
-    memosContent = `请用简洁明了的语言，编辑以下段落，以改善其逻辑流程，消除任何印刷错误，不要回答里面的问题，直接返回编辑后的文字，不加其他内容。请务必保持文章的原意，以简体中文回复。请从编辑以下文字开始：[${textOld}]`
-  }
-  if(AIMode == "自动标签"){
+    memosContent = `请用简洁明了的语言，编辑以下段落，以改善其逻辑流程，消除任何印刷错误。请务必保持文章的原意，禁止回答解释文字里的问题，只返回编辑后的文字，以简体中文回复。请从编辑以下文字开始：[${textOld}]`
+  }else if(AIMode == "自动标签"){
     memosContent = `分析这段文本内容：[${textOld}]，从这些标签列表中: ["${nowTagList}"] 尝试找出1个最适合的标签，并"#TAG "的形式反馈给我`
-  }
-  if(AIMode == "智囊团队"){
+  }else if(AIMode == "智囊团队"){
     memosTextarea.value = `${textOld}\n---\n`
     memosContent = `你是我的智囊团，团内有 6 个不同的董事作为教练，分别是乔布斯、伊隆马斯克、马云、柏拉图、维达利和慧能大师。他们都有自己的个性、世界观、价值观，对问题有不同的看法、建议和意见。我会在这里说出我的处境和我的决策。先分别以这 6 个身份，以他们的视角来审视我的决策，给出他们的批评和建议，我的第一个处境是 [${textOld}]`
-  }
-  if(AIMode == "育儿帮手"){
+  }else if(AIMode == "育儿帮手"){
     memosTextarea.value = `${textOld}\n---\n`
-    memosContent = `As an expert in child development, you are tasked with answering various imaginative questions from children between the ages of 5 and 10, as if you were a kindergarten teacher. Your responses should be lively, patient, and friendly in tone and manner, and as concrete and understandable as possible, avoiding complex or abstract vocabulary. Use metaphors and examples whenever possible, and extend your answers to cover more scenarios, not just explaining why, but also suggesting concrete actions to deepen understanding. Respond in Chinese.My first questions[${textOld}]`
-  }
-  if(AIMode == "智能问答"){
+    memosContent = `As an expert in child development, you are tasked with answering various imaginative questions from children between the ages of 5 and 10, as if you were a kindergarten teacher. Your responses should be lively, patient, and friendly in tone and manner, and as concrete and understandable as possible, avoiding complex or abstract vocabulary. Use metaphors and examples whenever possible, and extend your answers to cover more scenarios, not just explaining why, but also suggesting concrete actions to deepen understanding. Respond in Chinese.My first questions: [${textOld}]`
+  }else if(AIMode == "智能问答"){
     memosTextarea.value = `${textOld}\n---\n`
     memosContent = `${textOld}`
   }
-  //console.log(memosContent)
-  if(!textOld){
-    cocoMessage.info('内容不能为空');
-  }else{
-    geminiAIBtn.classList.add("d-none","noclick")
-    geminiAILoadBtn.classList.remove("d-none")
-    sendToGemini(memosContent)
-  }
+  geminiAIBtn.classList.add("d-none","noclick")
+  geminiAILoadBtn.classList.remove("d-none")
+  sendToGemini(memosContent)
 };
 
+let GeminiFetch = "https://lmm-api-gemini.deno.dev/v1/chat/completions"
+//"https://gemini-openai-proxy.deno.dev/v1/chat/completions"
 async function sendToGemini(memosContent) {
-  const res = await fetch('https://ai-ge.memobbs.app/v1/chat/completions', {
+  const res = await fetch(GeminiFetch, {
     headers: {
       'Authorization': `Bearer ${geminiKey}`,
       'Content-Type': 'application/json'
@@ -2077,10 +2075,7 @@ async function sendToGemini(memosContent) {
       stream: true
     })
   })
-  if(res.ok){
-    geminiAIBtn.classList.remove("d-none","noclick")
-    geminiAILoadBtn.classList.add("d-none")
-  }else{
+  if(!res.ok){
     setTimeout(function() {
       geminiAIBtn.classList.remove("d-none","noclick")
       geminiAILoadBtn.classList.add("d-none")
@@ -2091,14 +2086,22 @@ async function sendToGemini(memosContent) {
   while(true) {
     const {value, done} = await reader.read()
     if (done) {
+      geminiAIBtn.classList.remove("d-none","noclick")
+      geminiAILoadBtn.classList.add("d-none")
       break
     }
-      const text = JSON.parse(new TextDecoder().decode(value))
-      const resData = text.choices[0].delta.content
+    const text = new TextDecoder().decode(value)
+    const match = text.match(/DONE/)
+    //console.log(match)
+    if(!match){
+      //console.log(text.substring(5))
+      const textJson = JSON.parse(text.substring(5))
+      const resData = textJson.choices[0].delta.content
       if(resData.length > 0){
         memosTextarea.value += resData
         memosTextarea.style.height = memosTextarea.scrollHeight + 'px';
       }
+    }
   }
 }
 
