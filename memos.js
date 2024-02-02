@@ -1,5 +1,5 @@
 /**
- * memos.js 24.1.29
+ * memos.js 24.2.1
  * https://immmmm.com/
  */
 var memosData = {
@@ -85,6 +85,7 @@ var memosMeArtalkSite = window.localStorage && window.localStorage.getItem("memo
 var memosMeTwikoo = window.localStorage && window.localStorage.getItem("memos-twikoo-input");
 let cfwkAiUrl = window.localStorage && window.localStorage.getItem("memos-cfwkai-url")
 let geminiKey = window.localStorage && window.localStorage.getItem("memos-gemini-key")
+let filterName = window.localStorage && window.localStorage.getItem("memos-filter-name")
 
 var memosEditorCont = `
 <div class="memos-editor animate__animated animate__fadeIn col-12 d-none">
@@ -187,6 +188,7 @@ var memosEditorCont = `
         <input name="twikoo-path-url" class="memos-twikoo-input border-b input-text col-6 py-2" type="text" value="${memosMeTwikoo ? memosMeTwikoo : ''}" placeholder="[可选]Twikoo 评论网址">
         <input name="cfwkai-url" class="cfwkai-url-input border-b input-text col-6 py-2" type="text" value="${cfwkAiUrl ? cfwkAiUrl : ''}" placeholder="[可选]Cloudflare AI 网址">
         <input name="gemini-key" class="gemini-key-input border-b input-text col-6 py-2" type="text" value="${geminiKey ? geminiKey : ''}" placeholder="[可选]Gemini Pro Key">
+        <input name="filter-name" class="filter-name-input border-b input-text col-6 py-2" type="text" value="${filterName ? filterName : ''}" placeholder="[可选]广场过滤名单（ , 分隔多个）">
       </div>
       <button class="primary submit-openapi-btn px-5 py-2">保存</button>
     </div>
@@ -229,6 +231,7 @@ var artalkSiteInput = document.querySelector(".memos-artalksite-input");
 var twikooInput = document.querySelector(".memos-twikoo-input");
 var cfwkAiUrlInput = document.querySelector(".cfwkai-url-input");
 var geminiKeyInput = document.querySelector(".gemini-key-input");
+var filterNameInput = document.querySelector(".filter-name-input");
 var uploadImageInput = document.querySelector(".memos-upload-image-input");
 //Webp格式
 var uploadWebpImageInput = document.querySelector(".memos-upload-Webp-image-input");
@@ -325,7 +328,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
   }
-  
+
   nowLink = memosPath || memoList[0].link;
   nowId = memosMeID || memoList[0].creatorId;
   nowName = memosMeNickname || memoList[0].creatorName;
@@ -338,6 +341,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function getMemoListData(url) {
   const response = await fetch(url);
   const data = await response.json();
+  if(filterName){
+    let namesToRemove = filterName.replace(/，/g, ",").split(',');
+    for (let name of namesToRemove) {
+    let nameIndex = data.myMemoList.findIndex(item => (item.creatorName == name));
+      if (nameIndex !== -1) {
+        delete data.myMemoList.splice(nameIndex, 1);
+      }
+    };
+  }
   return data.myMemoList
 }
 
@@ -522,7 +534,8 @@ async function updateHtml(data) {
     LINE_REG = /\n/g,
     BLOCKQUDTE_REG = /\>.*$/g,
     CODE_REG = /\```.*$/g,
-    DEODB_LINK_REG = /(https:\/\/(www|movie|book)\.douban\.com\/(game|subject)\/[0-9]+\/).*?/g,
+    DOUDB_LINK_REG = /(https:\/\/(www|movie|book)\.douban\.com\/(game|subject)\/[0-9]+\/).*?/g,
+    NEODB_LINK_REG = /(https:\/\/neodb\.social\/(game|movie|tv|book)\/[0-9a-zA-Z]+)/g,//https://neodb.social/movie/2jGT1CtdgHPjirJj3bb0PA
     BILIBILI_REG = /<a.*?href="https:\/\/www\.bilibili\.com\/video\/((av[\d]{1,10})|(BV([\w]{10})))\/?".*?>.*<\/a>/g,
     NETEASE_MUSIC_REG = /<a.*?href="https:\/\/music\.163\.com\/.*id=([0-9]+)".*?>.*<\/a>/g,
     QQMUSIC_REG = /<a.*?href="https\:\/\/y\.qq\.com\/.*(\/[0-9a-zA-Z]+)(\.html)?".*?>.*?<\/a>/g,
@@ -553,7 +566,8 @@ async function updateHtml(data) {
     let memosRes = memo.content
       .replace(TAG_REG, "")
       .replace(IMG_REG, "")
-      .replace(DEODB_LINK_REG, "")
+      .replace(DOUDB_LINK_REG, "")
+      .replace(NEODB_LINK_REG, "")
       .replace(LINK_REG, `<a class='primary' href='$2' target='_blank'>$1</a>`)
       memosRes = marked.parse(memosRes)
       .replace(BILIBILI_REG, `<div class='video-wrapper'><iframe src='//www.bilibili.com/blackboard/html5mobileplayer.html?bvid=$1&as_wide=1&high_quality=1&danmaku=0' scrolling='no' border='0' frameborder='no' framespacing='0' allowfullscreen='true'></iframe></div>`)
@@ -573,12 +587,20 @@ async function updateHtml(data) {
         let memosImg = imgStr.replace(IMG_REG, `<div class="memo-resource width-100"><img class="lozad" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="$2"></div>`)
         memosRes += `<div class="resource-wrapper"><div class="images-wrapper my-2">${memosImg}</div></div>`
     }
-    // NeoDB
-    let neodbArr = memo.content.match(DEODB_LINK_REG);
+    // DoubanDB
+    let doudbArr = memo.content.match(DOUDB_LINK_REG);
+    let doudbDom = '';
+    if(doudbArr){
+      for(let k=0;k < doudbArr.length;k++){
+        doudbDom += await fetchNeoDB(doudbArr[k],"douban")
+      }
+    }
+    // DoubanDB
+    let neodbArr = memo.content.match(NEODB_LINK_REG);
     let neodbDom = '';
     if(neodbArr){
       for(let k=0;k < neodbArr.length;k++){
-        neodbDom += await fetchNeoDB(neodbArr[k])
+        neodbDom += await fetchNeoDB(neodbArr[k],"neodb")
       }
     }
     //标签
@@ -777,13 +799,149 @@ myFeedsBtn.addEventListener('click', function(event) {
       </div>
       `;
     }
-    memoDom.innerHTML = `<div class="myfeeds">${myFeedArticle}</div>`;
-    //相对时间
+    memoDom.innerHTML = `<div class="myfeeds-option row px-2 pb-2">
+      <div class="myfeeds-xml card-item px-3 py-2 mr-3" data-type="bfind" onclick="myFeedsXML(this)">BlogFinder</div>
+      <div class="myfeeds-xml card-item px-3 py-2 mr-3" data-type="jixin"  onclick="myFeedsXML(this)">积薪</div>
+      <div class="myfeeds-xml card-item px-3 py-2 mr-3" data-type="boyou"  onclick="myFeedsXML(this)">博友圈</div>
+      <div class="myfeeds-xml card-item px-3 py-2 mr-3" data-type="shinian"  onclick="myFeedsXML(this)">十年之约</div>
+    </div>
+    <div class="myfeeds">${myFeedArticle}</div>`;
     window.Lately && Lately.init({
       target: '.item-mate'
     });
   })
 });
+
+function myFeedsXML(e){
+  loadBtn.classList.add('d-none');
+  let myfeedsDom = document.querySelector(".myfeeds")
+  document.querySelectorAll('.myfeeds-xml').forEach((item) => {
+    item.classList.add('noclick');
+    item.classList.remove('current');
+  })
+  e.classList.add("current")
+  let type = e.getAttribute("data-type")
+  myfeedsDom.innerHTML = ""
+  let myFeedArticle = '',entries;
+  myfeedsDom.innerHTML = skeleton;
+  if(type=="bfind"){
+    fetch('https://cors.memobbs.app/https://bf.zzxworld.com/feed.xml').then(response => response.text()).then(str => new window.DOMParser().parseFromString(str, 'text/xml'))
+    .then(data => {
+      entries = Array.from(data.querySelectorAll('entry')).map(entry => {
+        return {
+          title: entry.querySelector('title').textContent,
+          link: entry.querySelector('link').getAttribute('href'),
+          published: entry.querySelector('published').textContent,
+          creator: entry.querySelector('author name').textContent
+        };
+      });
+      var myFeedArticle = '';
+      for (var i = 0;i<20;i++){
+        let item = entries[i];
+        myFeedArticle +=`
+        <div class="card-item flex-fill p-3">
+          <div class="d-flex flex-fill">
+            <div class="item-avatar mr-2 face" style="background-image:url('https://favicon.memobbs.app?url=${item.link}')"></div>
+            <div class="item-sub d-flex flex-column p-1">
+              <div class="item-creator"><a href="${item.link}" target="_blank" rel="noopener nofollow" >${item.title}</a></div>
+              <span class="myfeeds-floor">${i+1}</span>
+              <div class="item-mate mt-2 text-xs">${item.published}</div>
+            </div>
+          </div>
+        </div>
+        `;
+        myfeedsDom.innerHTML = myFeedArticle
+      }
+      document.querySelectorAll('.myfeeds-xml').forEach((item) => {item.classList.remove('noclick');})
+      window.Lately && Lately.init({target: '.item-mate'});
+    });
+  }
+  if(type=="jixin"){
+    fetch("https://cors.memobbs.app/https://firewood.news/rss.xml").then(response => response.text()).then(str => new window.DOMParser().parseFromString(str, 'text/xml'))
+    .then(data => {
+      entries = Array.from(data.querySelectorAll('item')).map(entry => {
+        return {
+          title: entry.querySelector('title').textContent,
+          link: entry.querySelector('link').textContent,
+          published: entry.querySelector('pubDate').textContent,
+          creator: entry.querySelector('author').textContent.charAt(0)
+        };
+      });
+      var myFeedArticle = '';
+      for (var i = 0;i<15;i++){
+        let item = entries[i];
+        myFeedArticle +=`
+        <div class="card-item flex-fill p-3">
+          <div class="d-flex flex-fill">
+            <div class="item-avatar mr-2 face" style="background-image:url('https://favicon.memobbs.app?url=${item.link}')"></div>
+            <div class="item-sub d-flex flex-column p-1">
+              <div class="item-creator"><a href="${item.link}" target="_blank" rel="noopener nofollow" >${item.title}</a></div>
+              <span class="myfeeds-floor">${i+1}</span>
+              <div class="item-mate mt-2 text-xs">${item.published}</div>
+            </div>
+          </div>
+        </div>
+        `;
+        myfeedsDom.innerHTML = myFeedArticle
+      }
+      document.querySelectorAll('.myfeeds-xml').forEach((item) => {item.classList.remove('noclick');})
+      window.Lately && Lately.init({target: '.item-mate'});
+    });
+  }
+  if(type=="boyou"){
+    fetch("https://www.boyouquan.com/feed.xml").then(response => response.text()).then(str => new window.DOMParser().parseFromString(str, 'text/xml'))
+    .then(data => {
+      entries = Array.from(data.querySelectorAll('item')).map(entry => {
+        return {
+          title: entry.querySelector('title').textContent,
+          link: decodeURIComponent(entry.querySelector('link').textContent.replace('https://www.boyouquan.com/go?from=feed&link=',"")),
+          published: entry.getElementsByTagName('dc:date')[0].textContent,
+          creator: entry.getElementsByTagName('dc:creator')[0].textContent
+        };
+      });
+      for (var i = 0;i<20;i++){
+        let item = entries[i];
+        myFeedArticle +=`
+        <div class="card-item flex-fill p-3">
+          <div class="d-flex flex-fill">
+            <div class="item-avatar mr-2 face" style="background-image:url('https://favicon.memobbs.app?url=${item.link}')"></div>
+            <div class="item-sub d-flex flex-column p-1">
+              <div class="item-creator"><a href="${item.link}" target="_blank" rel="noopener nofollow" >${item.title}</a></div>
+              <span class="myfeeds-floor">${i+1}</span>
+              <div class="item-mate mt-2 text-xs">${item.published}</div>
+            </div>
+          </div>
+        </div>
+        `;
+        myfeedsDom.innerHTML = myFeedArticle
+      }
+      document.querySelectorAll('.myfeeds-xml').forEach((item) => {item.classList.remove('noclick');})
+      window.Lately && Lately.init({target: '.item-mate'});
+    });
+  }
+  if(type=="shinian"){
+    fetch("https://www.foreverblog.cn/api/v1/blog/feeds?page=1").then(res => res.json()).then(resdata =>{
+      for (var i = 0;i<20;i++){
+        let item = resdata.data.data[i];
+        myFeedArticle +=`
+        <div class="card-item flex-fill p-3">
+          <div class="d-flex flex-fill">
+            <div class="item-avatar mr-2" style="background-image:url(https://gravatar.loli.net/avatar/${item.email})"></div>
+            <div class="item-sub d-flex flex-column p-1">
+              <div class="item-creator"><a href="${item.link}" target="_blank" rel="noopener nofollow" >${item.title}</a></div>
+              <span class="myfeeds-floor">${i+1}</span>
+              <div class="item-mate mt-2 text-xs">${item.created_at}</div>
+            </div>
+          </div>
+        </div>
+        `;
+        myfeedsDom.innerHTML = myFeedArticle
+      }
+      document.querySelectorAll('.myfeeds-xml').forEach((item) => {item.classList.remove('noclick');})
+      window.Lately && Lately.init({target: '.item-mate'});
+    });
+  }
+}
 
 //标签筛选且输入框为空，自动插入标签
 memosTextarea.addEventListener('focus', function(event) {
@@ -823,7 +981,7 @@ function searchNow(serchText){
     let usernowName = document.querySelector(".user-now-name").innerHTML;
     let serchDom = `
       <div class="memos-tagnow row p-2 mb-2">
-        <div class="memos-tagnow-title mr-3">当前搜索:</div>
+        <div class="memos-tagnow-title mr-3">当前搜索b:</div>
         <div class="memos-tagnow-name card-item pr-2 pl-2" onclick="reloadUser('search')">${serchText}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-auto ml-1 opacity-40"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></div>
       </div>`
     memosDom.insertAdjacentHTML('beforebegin', serchDom);
@@ -978,7 +1136,6 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
 
     if (link == memosPath) {
       try {
-
         let response = await fetch(userMemoUrl,{
             headers: {
               'Authorization': `Bearer ${memosOpenId}`,
@@ -1084,8 +1241,13 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
     });
 }
 // Fetch NeoDB
-async function fetchNeoDB(url){
-  let urlNow = "https://api-neodb.immmmm.com/?url="+url
+async function fetchNeoDB(url,mode){
+  let urlNow;
+  if(mode == "douban"){
+    urlNow = "https://api-neodb.immmmm.com/?url="+url
+  }else if(mode = "neodb"){
+    urlNow = url.replace("social/","social/api/")
+  }
   let response = await fetch(urlNow);
   let dbFetch = await response.json();
   let neodbDom = `<div class="db-card">
@@ -1694,6 +1856,7 @@ function getEditIcon() {
       if(twikooInput.value !== null || twikooInput.value !== '') window.localStorage && window.localStorage.setItem("memos-twikoo-input", twikooInput.value);
       if(cfwkAiUrlInput.value !== null || cfwkAiUrlInput.value !== '') window.localStorage && window.localStorage.setItem("memos-cfwkai-url", cfwkAiUrlInput.value);
       if(geminiKeyInput.value !== null || geminiKeyInput.value !== '') window.localStorage && window.localStorage.setItem("memos-gemini-key", geminiKeyInput.value);
+      if(filterNameInput.value !== null || filterNameInput.value !== '') window.localStorage && window.localStorage.setItem("memos-filter-name", filterNameInput.value);
     }
   });
 
