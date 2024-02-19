@@ -1,5 +1,5 @@
 /**
- * memos.js 24.2.1
+ * memos.js 24.2.9
  * https://immmmm.com/
  */
 var memosData = {
@@ -433,16 +433,11 @@ function memoFollow(mode) {
       let artalkPromise = await Promise.all(
         artalkList.map(async (item) => {
           try {
-            let formData = new FormData();
-            formData.append('type', 'page_comment');
-            formData.append('page_keys', item.urls.join(','));
-            formData.append('site_name', item.site_name);
-            let response = await fetch(`${item.envId}/api/stat`, {
-              method: 'POST',
-              body: formData
-            });
+            let pageKeys = item.urls.join(',');
+            let siteName = item.site_name;
+            let response = await fetch(`${item.envId}/api/v2/stats/page_comment?page_keys=${pageKeys}&site_name=${siteName}`);
             if (!response.ok) {
-              throw new Error(`Request failed for ${item.envId}/api/stat`);
+              throw new Error(`Request failed`);
             }
             let results = await response.json();
             let countList = item.urls.map(url => {
@@ -535,7 +530,8 @@ async function updateHtml(data) {
     BLOCKQUDTE_REG = /\>.*$/g,
     CODE_REG = /\```.*$/g,
     DOUDB_LINK_REG = /(https:\/\/(www|movie|book)\.douban\.com\/(game|subject)\/[0-9]+\/).*?/g,
-    NEODB_LINK_REG = /(https:\/\/neodb\.social\/(game|movie|tv|book)\/[0-9a-zA-Z]+)/g,//https://neodb.social/movie/2jGT1CtdgHPjirJj3bb0PA
+    NEODB_LINK_REG = /(https:\/\/neodb\.social\/(game|movie|tv\/season|book)\/[0-9a-zA-Z]+)(?= )/g,
+    BILIBILI_REG2 = /{ bilibili ([0-9a-zA-Z]+) }/g,
     BILIBILI_REG = /<a.*?href="https:\/\/www\.bilibili\.com\/video\/((av[\d]{1,10})|(BV([\w]{10})))\/?".*?>.*<\/a>/g,
     NETEASE_MUSIC_REG = /<a.*?href="https:\/\/music\.163\.com\/.*id=([0-9]+)".*?>.*<\/a>/g,
     QQMUSIC_REG = /<a.*?href="https\:\/\/y\.qq\.com\/.*(\/[0-9a-zA-Z]+)(\.html)?".*?>.*?<\/a>/g,
@@ -557,6 +553,7 @@ async function updateHtml(data) {
     let creatorId = memo.creatorId;
     let creatorName = memo.creatorName;
     let createdTs = memo.createdTs;
+    let in2Week = Math.floor(new Date().getTime()/ 1000) - createdTs <= 1209600 ? "in2week" : "out2week";
     let memosId = createdTs+memo.id;
     let memosVisibility = memo.visibility
     let twikooEnv = memo.twikoo;
@@ -571,6 +568,7 @@ async function updateHtml(data) {
       .replace(LINK_REG, `<a class='primary' href='$2' target='_blank'>$1</a>`)
       memosRes = marked.parse(memosRes)
       .replace(BILIBILI_REG, `<div class='video-wrapper'><iframe src='//www.bilibili.com/blackboard/html5mobileplayer.html?bvid=$1&as_wide=1&high_quality=1&danmaku=0' scrolling='no' border='0' frameborder='no' framespacing='0' allowfullscreen='true'></iframe></div>`)
+      .replace(BILIBILI_REG2, `<div class='video-wrapper'><iframe src='//www.bilibili.com/blackboard/html5mobileplayer.html?bvid=$1&as_wide=1&high_quality=1&danmaku=0' scrolling='no' border='0' frameborder='no' framespacing='0' allowfullscreen='true'></iframe></div>`)
       .replace(NETEASE_MUSIC_REG, `<meting-js auto='https://music.163.com/#/song?id=$1'></meting-js>`)
       .replace(QQMUSIC_REG, `<meting-js auto='https://y.qq.com/n/yqq/song$1.html'></meting-js>`)
       .replace(QQVIDEO_REG, `<div class='video-wrapper'><iframe src='//v.qq.com/iframe/player.html?vid=$1' allowFullScreen='true' frameborder='no'></iframe></div>`)
@@ -589,18 +587,17 @@ async function updateHtml(data) {
     }
     // DoubanDB
     let doudbArr = memo.content.match(DOUDB_LINK_REG);
-    let doudbDom = '';
+    let neodbDom = '';
     if(doudbArr){
       for(let k=0;k < doudbArr.length;k++){
-        doudbDom += await fetchNeoDB(doudbArr[k],"douban")
+        neodbDom += await fetchNeoDB(doudbArr[k],"douban")
       }
     }
     // DoubanDB
     let neodbArr = memo.content.match(NEODB_LINK_REG);
-    let neodbDom = '';
     if(neodbArr){
-      for(let k=0;k < neodbArr.length;k++){
-        neodbDom += await fetchNeoDB(neodbArr[k],"neodb")
+      for(let l=0;l < neodbArr.length;l++){
+        neodbDom += await fetchNeoDB(neodbArr[l],"neodb")
       }
     }
     //标签
@@ -626,15 +623,18 @@ async function updateHtml(data) {
         if (resexlink) {
             imgLink = resexlink
         } else {
-            fileId = resourceList[j].publicId || resourceList[j].filename
-            imgLink = `${memo.link}/o/r/${resourceList[j].id}`;///${fileId}
+            fileId = resourceList[j].id;
+            if(resourceList[j].name !== undefined){
+              fileId = resourceList[j].name+"?thumbnail=1"
+            }
+            imgLink = `${memo.link}/o/r/${fileId}`;
         }
         if (restype == 'image') {
           imgUrl += `<div class="memo-resource w-100"><img class="lozad" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="${imgLink}"/></div>`;
           resImgLength = resImgLength + 1
         }
         if (restype == 'video') {
-          resUrl += `<video style="width:100%;" crossorigin="anonymous" src="${imgLink}" controls=""></video>`
+          resUrl += `<video style="width:100%;max-height:50vh;" crossorigin="anonymous" src="${imgLink}" controls=""></video>`
         }
         if (restype !== 'video' && restype !== 'image') {
           resUrl += `<a class="memos-tag p-1" target="_blank" rel="noreferrer" href="${imgLink}">${resourceList[j].filename}</a>`;
@@ -675,7 +675,7 @@ async function updateHtml(data) {
       itemContent += `<div class="d-flex flex-fill justify-content-end"></div></div>`;
     }
     itemContent += `</div></div></div>`
-    result += `<div class="${memosMode == "MEMOSHOME" && tagnowHas == null &&oneDayTag !== null && i == 0 ? oneDayClass : ''} memo-${memosId} d-flex animate__animated mb-3"><div class="card-item flex-fill p-3"><div class="item-header d-flex mb-3"><div class="d-flex flex-fill"><div onclick="getUserMemos('${link}', '${creatorId}','${creatorName}','${avatar}')" class="item-avatar mr-2" style="background-image:url(${avatar})"></div><div class="item-sub d-flex flex-column p-1"><div class="item-creator"><a href="${website}" target="_blank">${creatorName}</a></div><div class="item-mate mt-2 text-xs">${new Date(createdTs * 1000 - 5 ).toLocaleString()}</div></div></div>${itemOption}</div>${neodbDom+itemContent}</div></div>`;
+    result += `<div class="${memosMode == "MEMOSHOME" && tagnowHas == null &&oneDayTag !== null && i == 0 ? oneDayClass : ''} memo-${memosId} d-flex animate__animated mb-3"><div class="card-item flex-fill p-3"><div class="item-header d-flex mb-3"><div class="d-flex flex-fill"><div onclick="getUserMemos('${link}', '${creatorId}','${creatorName}','${avatar}')" class="item-avatar mr-2" style="background-image:url(${avatar})"></div><div class="item-sub d-flex flex-column p-1"><div class="item-creator"><a href="${website}" target="_blank">${creatorName}</a></div><div class="item-mate ${in2Week} mt-2 text-xs">${new Date(createdTs * 1000 - 5 ).toLocaleString()}</div></div></div>${itemOption}</div>${neodbDom+itemContent}</div></div>`;
   } // end for
   
   memoDom.insertAdjacentHTML('beforeend', result);
@@ -696,7 +696,7 @@ async function updateHtml(data) {
   window.ViewImage && ViewImage.init('.images-wrapper img')
   //相对时间
   window.Lately && Lately.init({
-    target: '.item-mate'
+    target: '.item-mate.in2week'
   });
   //延迟加载
   let observer = lozad('.lozad');
@@ -1246,6 +1246,8 @@ async function fetchNeoDB(url,mode){
   if(mode == "douban"){
     urlNow = "https://api-neodb.immmmm.com/?url="+url
   }else if(mode = "neodb"){
+
+    console.log(url)
     urlNow = url.replace("social/","social/api/")
   }
   let response = await fetch(urlNow);
@@ -1318,7 +1320,7 @@ function loadArtalk(e) {
     }
     artalkDom.insertAdjacentHTML('beforeend', artalkCon);
     artalkDom.classList.remove('d-none');
-    ArtalkLite.init({
+    Artalk.init({
       el: '#artalk',
       pageKey: '/m/' + artalkId,
       pageTitle: '',
