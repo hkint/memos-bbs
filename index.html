@@ -44,7 +44,8 @@
   <link rel="apple-touch-startup-image" href="/pwa/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"/>
   <link rel="apple-touch-startup-image" href="/pwa/splash-1136x640.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"/>
   
-  <title>MemoBBS</title>
+  <link rel="stylesheet" type="text/css" href="https://npm.elemecdn.com/lxgw-wenkai-screen-webfont/lxgwwenkaiscreen.css" />
+  <title>Memos</title>
 </head>
 
 <link rel="stylesheet" href="/cdn/APlayer.min.css">
@@ -65,7 +66,7 @@
     color: var(--light-color);
     font-weight: 400;
     font-size: 1.1rem;
-    font-family: "HarmonyOS_Regular","PingFangSC-Regular", "PingFang SC", "Microsoft YaHei", Arial, Helvetica, "WenQuanYi Micro Hei", "tohoma,sans-serif";
+    font-family: "LXGW WenKai Screen","PingFangSC-Regular", "PingFang SC", "Microsoft YaHei", Arial, Helvetica, "WenQuanYi Micro Hei", "tohoma,sans-serif";
     line-height: 1.5;
     text-rendering: optimizeLegibility;
     -webkit-overflow-scrolling: touch;
@@ -111,17 +112,18 @@ document.addEventListener('gesturestart', function(event) {
   }
   var memosMyList = [
     {
-      "creatorName" : "林木木",
-      "website" : "https://immmmm.com",
-      "link" : "https://me.edui.fun",
-      "creatorId" : "101",
-      "avatar" : "https://gravatar.memobbs.app/avatar/ba83fa02fc4b2ba621514941307e21be?s=80",
-      "twikoo" : "https://metk.edui.fun"
+      "creatorName" : "HK",
+      "website" : "https://okhk.net",
+      "link" : "https://bb.okhk.net",
+      "creatorId" : "1",
+      "avatar" : "https://okhk.net/favicon.png",
+      "twikoo": "https://twikoo.okhk.net"
     }
   ]
 </script>
 
-<script src="/cdn/twikoo.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/twikoo@1.6.38/dist/twikoo.all.min.js"></script>
+
 <script src="/cdn/ArtalkLite.js"></script>
 <script src="/cdn/marked.min.js"></script>
 <script src="/cdn/APlayer.min.js"></script>

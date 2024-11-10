@@ -1156,7 +1156,6 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
             headers: {
               'Authorization': `Bearer ${memosOpenId}`,
               'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache',
             },
             cache: 'no-store',
         });
@@ -1176,7 +1175,6 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
                 headers: {
                   'Authorization': `Bearer ${memosOpenId}`,
                   'Content-Type': 'application/json',
-                  'Cache-Control': 'no-cache',
                 },
                 cache: 'no-store',
               });
@@ -1708,7 +1706,6 @@ function getEditIcon() {
             headers: {
               'Authorization': `Bearer ${memosOpenId}`,
               'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache',
             },
             cache: 'no-store',
         });
@@ -1746,7 +1743,6 @@ function getEditIcon() {
             headers: {
               'Authorization': `Bearer ${memosOpenId}`,
               'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache',
             },
             cache: 'no-store',
         });
@@ -2345,7 +2341,6 @@ async function getMemosForAI(){
     headers: {
       'Authorization': `Bearer ${memosOpenId}`,
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
     },
     cache: 'no-store',
   });
