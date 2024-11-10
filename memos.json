@@ -87,8 +87,8 @@
     "twikoo" : "https://pl.elizen.me",
     "avatar": "https://gravatar.memobbs.app/avatar/f65df4d87240feb1cb247857a621a48f?s=80"
   },{
-    "creatorName": "l1nsn0w",
-    "website" : "https://blog.linsnow.cn",
+    "creatorName": "L1nSn0w",
+    "website" : "https://linsnow.cn",
     "link" : "https://memos.linsnow.cn",
     "creatorId" : "1",
     "avatar": "https://gravatar.memobbs.app/avatar/9f5d9e5efe3bea0139b12a0fe27100fe?s=80"
@@ -210,10 +210,9 @@
     "creatorName": "Pipu",
     "website": "https://pipuwong.com",
     "link": "https://bb.pipuwong.com",
-    "v1": "memos",
     "creatorId": "1",
     "avatar": "https://gravatar.memobbs.app/avatar/d3af34e32b9a018ed5b467d63beac3ed?size=80",
-    "artalk": "https://artalk.pipuwong.com",
+    "twikoo": "https://twikoo.pipu.studio",
     "artSite": "哔哔广场"
   },{
     "creatorName" : "Kevin",
@@ -332,6 +331,34 @@
     "v1":"memos",
     "creatorId" : "1",
     "avatar": "https://gravatar.memobbs.app/avatar/f97a316ab16d2db014f66e4d62d2b624?s=80"
+  },{
+    "creatorName": "Feng",
+    "website" : "https://057000.xyz",
+    "link" : "https://say.057000.xyz",
+    "v1":"memos",
+    "creatorId" : "1",
+    "avatar": "https://cravatar.cn/avatar/bf7a5bd302ccc8021d13d77bd09c9310?s=80"
+  },{
+    "creatorName": "王九弦SZ·Ninty",
+    "website" : "https://blog.sinzmise.top",
+    "link" : "https://diary.sinzmise.top",
+    "creatorId" : "1",
+    "twikoo" : "https://tk2.diary.sinzmise.top",
+    "avatar": "https://weavatar.com/avatar/e873808e83cf6b677b23b760c77523fb660b5db100791b3cb9a99cd5c25f9e84?s=80"
+  },{
+    "creatorName": "明明同学",
+    "website" : "https://isming.me",
+    "link" : "https://memos.isming.info",
+    "v1":"memos",
+    "creatorId" : "1",
+    "avatar": "https://seccdn.libravatar.org/avatar/baa1044fea8c14eb58086880ad8ed98d"
+  },{
+    "creatorName": "段先森",
+    "website": "https://www.duanxiansen.com",
+    "link": "https://memos.duanxiansen.com",
+    "creatorId": "1",
+    "avatar": "https://thirdqq.qlogo.cn/g?b=sdk&nk=2443266417&s=140",
+    "twikoo": "https://twikoo.duanxiansen.com"
   }
 
 ]
