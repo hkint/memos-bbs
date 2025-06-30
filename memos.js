@@ -399,7 +399,7 @@ function memoFollow(mode) {
             urls: []
           };
         }
-        twikooRes[creatorName].urls.push(`${link}m/${id}`);
+        twikooRes[creatorName].urls.push(`${link}/m/${id}`);
       }
       let twikooList = Object.values(twikooRes);
       let twikooPromise = await Promise.all(
@@ -418,6 +418,7 @@ function memoFollow(mode) {
         })
       );
       twikooCount = twikooPromise.flatMap(r => r);
+      //console.log(twikooCount)
     }
     let artalkData = m.filter(item => item.artalk);
     if (artalkData.length !== 0) {
@@ -534,7 +535,7 @@ async function updateHtml(data) {
     LINE_REG = /\n/g,
     BLOCKQUDTE_REG = /\>.*$/g,
     CODE_REG = /\```.*$/g,
-    DOUDB_LINK_REG = /(https:\/\/(www|movie|book)\.douban\.com\/(game|subject)\/[0-9]+\/).*?/g,
+    //DOUDB_LINK_REG = /(https:\/\/(www|movie|book)\.douban\.com\/(game|subject)\/[0-9]+\/).*?/g,
     NEODB_LINK_REG = /(https:\/\/neodb\.social\/(game|movie|tv\/season|book)\/[0-9a-zA-Z]+)(?= )/g,
     BILIBILI_REG2 = /{ bilibili ([0-9a-zA-Z]+) }/g,
     BILIBILI_REG = /<a.*?href="https:\/\/www\.bilibili\.com\/video\/((av[\d]{1,10})|(BV([\w]{10})))\/?".*?>.*<\/a>/g,
@@ -572,7 +573,7 @@ async function updateHtml(data) {
     let memosRes = memo.content
       .replace(TAG_REG, "")
       .replace(IMG_REG, "")
-      .replace(DOUDB_LINK_REG, "")
+      //.replace(DOUDB_LINK_REG, "")
       .replace(NEODB_LINK_REG, "")
       .replace(LINK_REG, `<a class='primary' href='$2' target='_blank'>$1</a>`)
       memosRes = marked.parse(memosRes)
@@ -595,13 +596,13 @@ async function updateHtml(data) {
         memosRes += `<div class="resource-wrapper"><div class="images-wrapper my-2" view-image>${memosImg}</div></div>`
     }
     // DoubanDB
-    let doudbArr = memo.content.match(DOUDB_LINK_REG);
+    //let doudbArr = memo.content.match(DOUDB_LINK_REG);
     let neodbDom = '';
-    if(doudbArr){
-      for(let k=0;k < doudbArr.length;k++){
-        neodbDom += await fetchNeoDB(doudbArr[k],"douban")
-      }
-    }
+    //if(doudbArr){
+    //  for(let k=0;k < doudbArr.length;k++){
+    //    neodbDom += await fetchNeoDB(doudbArr[k],"douban")
+    //  }
+    //}
     // DoubanDB
     let neodbArr = memo.content.match(NEODB_LINK_REG);
     if(neodbArr){
@@ -1287,16 +1288,17 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
 // Fetch NeoDB
 async function fetchNeoDB(url,mode){
   let urlNow;
-  if(mode == "douban"){
-    urlNow = "https://api-neodb.immmmm.com/?url="+url
-  }else if(mode = "neodb"){
+  //if(mode == "douban"){
+  //  urlNow = "https://api-neodb.immmmm.com/?url="+url
+  //}else
+  if(mode = "neodb"){
     urlNow = url.replace("social/","social/api/")
   }
   let response = await fetch(urlNow);
   let dbFetch = await response.json();
   let neodbDom = `<div class="db-card">
     <div class="db-card-subject">
-        <div class="db-card-post"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="https://cors.immmmm.com/${dbFetch.cover_image_url}"></div>
+        <div class="db-card-post"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${dbFetch.cover_image_url.replace("neodb.social/m","neodb.prvcy.page/m/")}"></div>
         <div class="db-card-content">
             <div class="db-card-title"><a href="${url}" class="cute" target="_blank" rel="noreferrer">${dbFetch.title}</a></div>
             <div class="rating"><span class="allstardark"><span class="allstarlight" style="width:${dbFetch.rating*10}%"></span></span><span class="rating_nums">${dbFetch.rating}</span></div>
@@ -1751,7 +1753,7 @@ function getEditIcon() {
         }
         let data = await response.json();
         nowTagCount = data.length - 1;
-        window.localStorage && window.localStorage.setItem("memos-oneday-tag",nowTag);
+        window.localStorage && window.localStorage.setItem("memos-oneday-tag", );
         window.localStorage && window.localStorage.setItem("memos-oneday-count",nowTagCount);
       } catch (error) {
         console.error(error);
