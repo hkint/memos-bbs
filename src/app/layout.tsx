@@ -2,47 +2,39 @@ import type { Metadata, Viewport } from "next";
 import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider"; // Assuming a local ThemeProvider component will be created or next-themes is used directly
+import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/layout/Header";
-// import { useInitializeTheme } from "@/stores/settings"; // Using next-themes ThemeProvider instead
+import { BackToTopButton } from "@/components/shared/BackToTopButton";
 
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 });
 
-// Placeholder for i18n function
-const i18n = (key: string) => key;
+// Placeholder for i18n function - not typically used in layout metadata directly
+// const i18n = (key: string) => key;
 
 export const metadata: Metadata = {
-  title: "MemoBBS Next",
+  title: "MemoBBS Next", // Consider making this dynamic or more generic if i18n is set up later
   description: "A modern MemoBBS client built with Next.js",
-  manifest: "/manifest.json", // Link to the manifest file in /public
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
+    { media: "(prefers-color-scheme: light)", color: "white" }, // Tailwind's default bg-background for light
+    { media: "(prefers-color-scheme: dark)", color: "hsl(240 10% 3.9%)" }, // Tailwind's default bg-background for dark
   ],
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const InitializeTheme = () => { // This was for Zustand theme, replaced by ThemeProvider
-  //   useInitializeTheme();
-  //   return null;
-  // };
-
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* manifest.json is now in metadata, but can also be linked directly if preferred: */}
-        {/* <link rel="manifest" href="/manifest.json" /> */}
-      </head>
+      <head />
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
@@ -55,11 +47,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* <InitializeTheme /> */}
           <div className="relative flex min-h-screen flex-col bg-background">
             <Header />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 container mx-auto px-4 py-8">{children}</main> {/* Added common page padding here */}
             {/* Add a Footer component here if needed */}
+            <BackToTopButton />
           </div>
         </ThemeProvider>
       </body>
